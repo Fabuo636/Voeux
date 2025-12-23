@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cartes de Voeux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <main class="container main">
+    <section class="hero" id="create">
+      <div class="hero-right">
+        <form class="card form" id="cardForm">
+          <div class="card-header">
+            <div class="card-title">Créer une carte</div>
+            <div class="card-subtitle">Remplis les champs ci-dessous</div>
+          </div>
+
+          <section class="step-block is-active" id="step1">
+            <div class="grid">
+              <div class="field">
+                <label for="senderName">Ton nom</label>
+                <input id="senderName" name="senderName" type="text" placeholder="Ali" required />
+              </div>
+              <div class="field">
+                <label for="senderPhone">Ton numéro de téléphone</label>
+                <input id="senderPhone" name="senderPhone" type="tel" placeholder="0612345678" />
+              </div>
+
+              <div class="field">
+                <label for="recipientName">Nom du récepteur</label>
+                <input id="recipientName" name="recipientName" type="text" placeholder="Sara" required />
+              </div>
+              <div class="field">
+                <label for="recipientPhone">Numéro de téléphone du récepteur</label>
+                <input id="recipientPhone" name="recipientPhone" type="tel" placeholder="0712345678" />
+              </div>
+
+              <div class="field">
+                <label for="recipientGender">Genre du récepteur</label>
+                <select id="recipientGender" name="recipientGender" required>
+                  <option value="">Choisir…</option>
+                  <option value="male">Homme</option>
+                  <option value="female">Femme</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="relationship">Lien</label>
+                <select id="relationship" name="relationship" required>
+                  <option value="">Choisir…</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="messageType">Type de message</label>
+                <select id="messageType" name="messageType" required>
+                  <option value="">Choisir…</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="tone">Ton souhaité</label>
+                <input id="tone" name="tone" type="text" placeholder="chaleureux, élégant, drôle…" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Générer des propositions</button>
+              <button class="btn btn-ghost" type="button" id="resetBtn">Réinitialiser</button>
+            </div>
+          </section>
+
+          <section class="step-block" id="step2" aria-live="polite">
+            <div class="divider"></div>
+
+            <div class="suggestions-head">
+              <div>
+                <div class="suggestions-title">Propositions</div>
+                <div class="suggestions-subtitle">Sélectionne un message puis continue</div>
+              </div>
+            </div>
+
+            <div class="suggestions-list" id="suggestionsList">
+              <div class="empty-state">
+                Remplis le formulaire puis clique sur « Générer des propositions ».
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-ghost" type="button" id="backToFormBtn">Retour</button>
+              <button class="btn btn-primary" type="button" id="goPreviewBtn" disabled>Voir l’aperçu</button>
+            </div>
+          </section>
+        </form>
+      </div>
+    </section>
+
+    <section class="two-col step-block" id="step3">
+      <div class="card preview" id="preview">
+        <div class="preview-head">
+          <div>
+            <div class="preview-title">Aperçu</div>
+          </div>
+          <div>
+            <div class="field">
+              <label for="cardBackground">Fond de la carte</label>
+              <select id="cardBackground" name="cardBackground">
+                <option value="black">Noir</option>
+                <option value="red">Rouge</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-canvas" id="previewCanvas">
+          <div class="preview-glow"></div>
+          <div class="preview-overlay"></div>
+          <div class="preview-content">
+            <div class="preview-occasion" id="previewOccasion">Carte</div>
+            <div class="preview-greeting" id="previewGreeting">Cher…</div>
+            <div class="preview-message" id="previewMessage">Choisis une proposition pour l’afficher ici.</div>
+            <div class="preview-sign" id="previewSign">—</div>
+          </div>
+        </div>
+
+        <div class="preview-actions">
+          <button class="btn btn-secondary" type="button" id="copyBtn">Copier le message</button>
+          <button class="btn btn-primary" type="button" id="chooseBtn" disabled>Valider</button>
+          <button class="btn btn-ghost" type="button" id="backToSuggestionsBtn">Retour</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="howModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="howTitle">Comment ça marche</div>
+          <div class="modal-subtitle">En 3 étapes simples</div>
+        </div>
+        <button class="icon-btn" type="button" id="howClose" aria-label="Fermer" title="Fermer">
+          <span class="icon" aria-hidden="true">×</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="steps">
+          <div class="step">
+            <div class="step-dot"></div>
+            <div>
+              <div class="step-title">1. Tu renseignes</div>
+              <div class="step-text">Infos envoyeur + récepteur, lien, genre de carte, ton.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-dot"></div>
+            <div>
+              <div class="step-title">2. On propose</div>
+              <div class="step-text">Plusieurs messages élégants sont générés par l’IA.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-dot"></div>
+            <div>
+              <div class="step-title">3. Tu choisis</div>
+              <div class="step-text">Tu sélectionnes le message final, prêt à être envoyé.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+</body>
+</html>

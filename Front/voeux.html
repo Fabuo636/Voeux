@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carte de vœux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .public-wrap {
+      width: min(760px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .public-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .public-title {
+      font-family: Montserrat, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-style: normal;
+      font-weight: 800;
+      font-size: 18px;
+      color: rgba(241, 208, 138, 0.95);
+    }
+
+    .public-code {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.70);
+    }
+
+    .public-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .public-actions a,
+    .public-actions button {
+      border: 1px solid rgba(214, 179, 107, 0.28);
+      background: rgba(10, 10, 14, 0.30);
+      color: rgba(255, 255, 255, 0.92);
+      padding: 10px 14px;
+      border-radius: 0;
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 120ms ease, border-color 120ms ease;
+    }
+
+    .public-actions a:hover,
+    .public-actions button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(214, 179, 107, 0.48);
+    }
+
+    .public-actions button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #previewGreeting { display: block; }
+    #previewOccasion { display: block; }
+
+    #previewMessage { white-space: pre-line; }
+
+    .public-error {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(214, 179, 107, 0.22);
+      background: rgba(10, 10, 14, 0.35);
+      color: rgba(255, 255, 255, 0.86);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+
+  <main class="public-wrap">
+    <div class="public-head">
+      <div class="public-title">Vous avez reçu une carte de vœux</div>
+    </div>
+
+    <div class="card preview">
+      <div class="preview-canvas" id="previewCanvas">
+        <div class="preview-glow"></div>
+        <div class="preview-overlay"></div>
+        <div class="preview-content">
+          <div class="preview-occasion" id="previewOccasion">Carte</div>
+          <div class="preview-greeting" id="previewGreeting">Cher…</div>
+          <div class="preview-message" id="previewMessage">Chargement…</div>
+          <div class="preview-sign" id="previewSign">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="public-actions">
+      <button id="downloadBtn" type="button" disabled>Télécharger l'image</button>
+      <a id="sendYourOwnBtn" href="index.html">Envoyer une carte à son tour</a>
+    </div>
+
+    <div class="public-error" id="errorBox"></div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('previewCanvas');
+    const msgEl = document.getElementById('previewMessage');
+    const signEl = document.getElementById('previewSign');
+    const greetingEl = document.getElementById('previewGreeting');
+    const occasionEl = document.getElementById('previewOccasion');
+    const errorBox = document.getElementById('errorBox');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    function getParam(name) {
+      const u = new URL(window.location.href);
+      return (u.searchParams.get(name) || '').trim();
+    }
+
+    function showError(text) {
+      if (!errorBox) return;
+      errorBox.style.display = 'block';
+      errorBox.textContent = text;
+    }
+
+    function splitBodyAndSignature(message) {
+      const raw = String(message || '').replace(/\r\n/g, '\n');
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return { body: '', sign: '—' };
+
+      const last = lines[lines.length - 1];
+      if (last.startsWith('_')) {
+        return {
+          body: lines.slice(0, -1).join('\n').trim(),
+          sign: last,
+        };
+      }
+
+      return {
+        body: lines.join('\n').trim(),
+        sign: '—',
+      };
+    }
+
+    function splitGreetingAndBody(bodyText) {
+      const raw = String(bodyText || '').replace(/\r\n/g, '\n');
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return { greeting: '', body: '' };
+
+      const first = lines[0];
+      const isGreeting = /^(cher|chère|chere|bonjour|salut)\b/i.test(first);
+      if (!isGreeting) return { greeting: '', body: lines.join('\n').trim() };
+
+      return {
+        greeting: first,
+        body: lines.slice(1).join('\n').trim(),
+      };
+    }
+
+    function buildRecipientGreeting(name, gender) {
+      const n = String(name || '').trim();
+      if (!n) return '';
+
+      const g = String(gender || '').trim().toLowerCase();
+      if (g === 'male' || g === 'm' || g === 'homme' || g === 'masculin') {
+        return `Cher ${n},`;
+      }
+      if (g === 'female' || g === 'f' || g === 'femme' || g === 'feminin' || g === 'féminin') {
+        return `Chère ${n},`;
+      }
+      return `Cher/Chère ${n},`;
+    }
+
+    (async () => {
+      const code = getParam('code') || getParam('i');
+      if (!code) {
+        msgEl.textContent = '';
+        signEl.textContent = '—';
+        showError('Code manquant. Exemple: voeux.html?code=VOTRE_CODE');
+        return;
+      }
+
+      try {
+        const res = await fetch(`../API/voeux_public.php?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data || data.ok !== true) {
+          const err = data && data.error ? String(data.error) : 'Erreur';
+          throw new Error(err);
+        }
+
+        const msg = data.data && typeof data.data.message === 'string' ? data.data.message : '';
+        const bg = data.data && typeof data.data.background === 'string' ? data.data.background : '';
+        const recipientName = data.data && typeof data.data.recipient_name === 'string' ? data.data.recipient_name.trim() : '';
+        const recipientGender = data.data && typeof data.data.recipient_gender === 'string' ? data.data.recipient_gender.trim() : '';
+
+        if (occasionEl) {
+          occasionEl.textContent = 'Bonne année';
+        }
+
+        const parts = splitBodyAndSignature(msg);
+        const gb = splitGreetingAndBody(parts.body);
+        if (greetingEl) {
+          const greetingText = recipientName ? buildRecipientGreeting(recipientName, recipientGender) : gb.greeting;
+          greetingEl.style.display = 'block';
+          greetingEl.textContent = greetingText ? greetingText : 'Cher/Chère,';
+        }
+
+        msgEl.textContent = gb.body;
+        signEl.textContent = parts.sign;
+
+        if (canvas && bg) {
+          canvas.style.backgroundImage = `url('${bg}')`;
+          canvas.style.backgroundSize = 'cover';
+          canvas.style.backgroundPosition = 'center';
+          canvas.style.backgroundRepeat = 'no-repeat';
+        }
+
+        if (downloadBtn) {
+          if (bg) {
+            downloadBtn.disabled = false;
+            downloadBtn.onclick = async () => {
+              try {
+                const r = await fetch(bg, { mode: 'cors' });
+                const blob = await r.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `carte-${code}.png`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+              } catch (err) {
+                window.open(bg, '_blank');
+              }
+            };
+          } else {
+            downloadBtn.disabled = true;
+          }
+        }
+      } catch (e) {
+        msgEl.textContent = '';
+        signEl.textContent = '—';
+        if (greetingEl) {
+          greetingEl.textContent = '';
+          greetingEl.style.display = 'none';
+        }
+        showError(e && e.message ? e.message : 'Erreur de chargement');
+      }
+    })();
+  </script>
+</body>
+</html>

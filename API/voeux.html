@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carte de vœux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: rgba(10, 10, 14, 0.98);
+      --gold: rgba(241, 208, 138, 0.95);
+      --text: rgba(255, 255, 255, 0.92);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 900px at 50% 20%, rgba(214, 179, 107, 0.14), transparent 60%),
+                  linear-gradient(180deg, rgba(8, 8, 10, 1), rgba(10, 10, 14, 1));
+      color: var(--text);
+    }
+
+    .wrap {
+      width: min(820px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    .head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      font-family: Montserrat, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-style: italic;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--gold);
+    }
+
+    .code {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.70);
+    }
+
+    .card {
+      border-radius: 18px;
+      border: 1px solid rgba(214, 179, 107, 0.22);
+      background: rgba(10, 10, 14, 0.35);
+      padding: 14px;
+    }
+
+    .preview-canvas {
+      position: relative;
+      border-radius: 18px;
+      overflow: hidden;
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      min-height: 520px;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: rgba(10, 10, 14, 0.92);
+    }
+
+    .preview-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(closest-side at 50% 35%, rgba(214, 179, 107, 0.18), transparent 65%);
+      pointer-events: none;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(closest-side at 50% 40%, rgba(10, 10, 14, 0.08), rgba(10, 10, 14, 0.55));
+      pointer-events: none;
+    }
+
+    .preview-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 34px 34px 26px;
+    }
+
+    .preview-occasion,
+    .preview-greeting {
+      display: none;
+    }
+
+    .preview-message {
+      margin-top: 80px;
+      max-width: 40ch;
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-line;
+      color: rgba(255, 255, 255, 0.96);
+      text-shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    .preview-sign {
+      margin-top: auto;
+      align-self: flex-end;
+      font-family: Montserrat, Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-style: italic;
+      font-weight: 700;
+      color: rgba(241, 208, 138, 0.95);
+      text-shadow: 0 14px 50px rgba(0, 0, 0, 0.55);
+      white-space: pre;
+    }
+
+    .error {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(214, 179, 107, 0.22);
+      background: rgba(10, 10, 14, 0.35);
+      color: rgba(255, 255, 255, 0.86);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="head">
+      <div class="title">Carte de vœux</div>
+      <div class="code" id="codeLabel"></div>
+    </div>
+
+    <div class="card">
+      <div class="preview-canvas" id="previewCanvas">
+        <div class="preview-glow"></div>
+        <div class="preview-overlay"></div>
+        <div class="preview-content">
+          <div class="preview-occasion" id="previewOccasion">Carte</div>
+          <div class="preview-greeting" id="previewGreeting">Cher…</div>
+          <div class="preview-message" id="previewMessage">Chargement…</div>
+          <div class="preview-sign" id="previewSign">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="error" id="errorBox"></div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('previewCanvas');
+    const msgEl = document.getElementById('previewMessage');
+    const signEl = document.getElementById('previewSign');
+    const codeLabel = document.getElementById('codeLabel');
+    const errorBox = document.getElementById('errorBox');
+
+    function getParam(name) {
+      const u = new URL(window.location.href);
+      return (u.searchParams.get(name) || '').trim();
+    }
+
+    function showError(text) {
+      if (!errorBox) return;
+      errorBox.style.display = 'block';
+      errorBox.textContent = text;
+    }
+
+    function splitBodyAndSignature(message) {
+      const raw = String(message || '').replace(/\r\n/g, '\n');
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return { body: '', sign: '—' };
+
+      const last = lines[lines.length - 1];
+      if (last.startsWith('_')) {
+        return {
+          body: lines.slice(0, -1).join('\n').trim(),
+          sign: last,
+        };
+      }
+
+      return {
+        body: lines.join('\n').trim(),
+        sign: '—',
+      };
+    }
+
+    (async () => {
+      const code = getParam('code');
+      if (!code) {
+        msgEl.textContent = '';
+        signEl.textContent = '—';
+        showError('Code manquant. Exemple: voeux.html?code=VOTRE_CODE');
+        return;
+      }
+
+      codeLabel.textContent = `Code: ${code}`;
+
+      try {
+        const res = await fetch(`voeux_public.php?code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data || data.ok !== true) {
+          const err = data && data.error ? String(data.error) : 'Erreur';
+          throw new Error(err);
+        }
+
+        const msg = data.data && typeof data.data.message === 'string' ? data.data.message : '';
+        const bg = data.data && typeof data.data.background === 'string' ? data.data.background : '';
+
+        const parts = splitBodyAndSignature(msg);
+        msgEl.textContent = parts.body;
+        signEl.textContent = parts.sign;
+
+        if (canvas && bg) {
+          canvas.style.backgroundImage = `url('${bg}')`;
+        }
+      } catch (e) {
+        msgEl.textContent = '';
+        signEl.textContent = '—';
+        showError(e && e.message ? e.message : 'Erreur de chargement');
+      }
+    })();
+  </script>
+</body>
+</html>
