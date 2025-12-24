@@ -15,6 +15,11 @@ const howBtn = document.getElementById('howBtn');
 const howModal = document.getElementById('howModal');
 const howClose = document.getElementById('howClose');
 
+const confirmModal = document.getElementById('confirmModal');
+const confirmClose = document.getElementById('confirmClose');
+const confirmOkBtn = document.getElementById('confirmOkBtn');
+const restartBtn = document.getElementById('restartBtn');
+
 const step1 = document.getElementById('step1');
 const step2 = document.getElementById('step2');
 const step3 = document.getElementById('step3');
@@ -27,6 +32,9 @@ const relationshipSelect = document.getElementById('relationship');
 const messageTypeSelect = document.getElementById('messageType');
 
 const formHeader = document.querySelector('#cardForm .card-header');
+
+const generateBtn = document.getElementById('generateBtn');
+const generateBtnLabel = generateBtn ? generateBtn.querySelector('.btn-label') : null;
 
 let selectedText = '';
 let selectedBodyText = '';
@@ -114,6 +122,20 @@ function closeHowModal() {
   document.body.style.overflow = '';
 }
 
+function openConfirmModal() {
+  if (!confirmModal) return;
+  confirmModal.classList.add('is-open');
+  confirmModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmModal() {
+  if (!confirmModal) return;
+  confirmModal.classList.remove('is-open');
+  confirmModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
 if (howBtn && howModal) {
   howBtn.addEventListener('click', openHowModal);
 }
@@ -131,10 +153,29 @@ if (howModal) {
   });
 }
 
+if (confirmModal) {
+  confirmModal.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.dataset && t.dataset.close === 'true') {
+      closeConfirmModal();
+    }
+  });
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && howModal && howModal.classList.contains('is-open')) {
     closeHowModal();
   }
+  if (e.key === 'Escape' && confirmModal && confirmModal.classList.contains('is-open')) {
+    closeConfirmModal();
+  }
+});
+
+confirmClose && confirmClose.addEventListener('click', closeConfirmModal);
+confirmOkBtn && confirmOkBtn.addEventListener('click', closeConfirmModal);
+restartBtn && restartBtn.addEventListener('click', () => {
+  closeConfirmModal();
+  resetBtn && resetBtn.click();
 });
 
 let lastFieldPointerDown = null;
@@ -235,6 +276,27 @@ function applyCardBackgroundFromForm() {
   previewCanvas.style.backgroundRepeat = 'no-repeat';
 }
 
+function buildRecipientGreeting(name, gender) {
+  const n = String(name || '').trim();
+  if (!n) return '';
+
+  const g = String(gender || '').trim().toLowerCase();
+  if (g === 'female') return `Chère ${n},`;
+  return `Cher ${n},`;
+}
+
+function buildRecipientGreetingPlaceholder(gender) {
+  const g = String(gender || '').trim().toLowerCase();
+  return g === 'female' ? 'Chère…' : 'Cher…';
+}
+
+function getSelectedOptionLabel(selectId) {
+  const el = document.getElementById(selectId);
+  if (!el || !el.options || el.selectedIndex < 0) return '';
+  const opt = el.options[el.selectedIndex];
+  return opt ? String(opt.textContent || '').trim() : '';
+}
+
 document.getElementById('recipientGender')?.addEventListener('change', applyCardBackgroundFromForm);
 document.getElementById('cardBackground')?.addEventListener('change', applyCardBackgroundFromForm);
 applyCardBackgroundFromForm();
@@ -268,10 +330,13 @@ function renderSuggestions(items) {
       selectedText = buildFinalText({ body: selectedBodyText, senderName });
 
       const recipientName = document.getElementById('recipientName').value.trim();
+      const recipientGender = document.getElementById('recipientGender')?.value.trim() || '';
       previewOccasion.textContent = FIXED_OCCASION;
       const greetEl = document.getElementById('previewGreeting');
       if (greetEl) {
-        greetEl.textContent = recipientName ? `Cher ${recipientName},` : 'Cher…';
+        greetEl.textContent = recipientName
+          ? buildRecipientGreeting(recipientName, recipientGender)
+          : buildRecipientGreetingPlaceholder(recipientGender);
       }
       previewMessage.textContent = selectedBodyText || '…';
       previewSign.textContent = senderName ? `_ ${senderName}` : '—';
@@ -288,13 +353,19 @@ function renderSuggestions(items) {
 function generateLocalSuggestions({ senderName, recipientName, relationship, occasion, tone }) {
   const t = tone ? tone : 'chaleureux';
 
+  const gender = document.getElementById('recipientGender')?.value.trim() || '';
+  const isFemale = gender === 'female';
+  const gendered = (m, f) => (isFemale ? f : m);
+
+  const greeting = buildRecipientGreeting(recipientName, gender) || 'Cher…';
+
   const longTail = ` Je te souhaite de la joie, de la sérénité et de belles réussites pour la suite.`;
 
   const base = [
-    `Cher/Chère ${recipientName}, en ce ${occasion}, je t’adresse des vœux ${t}. Merci d’être un(e) ${relationship} précieux(se) dans ma vie. ${longTail} — ${senderName}`,
-    `${recipientName}, pour ce ${occasion}, reçois mes vœux ${t} et sincères. Que cette période t’apporte de belles opportunités et de bons moments. — ${senderName}`,
-    `À ${recipientName} : je te souhaite un ${occasion} lumineux et apaisant. Que tout ce qui compte pour toi avance dans le bon sens. — ${senderName}`,
-    `${recipientName}, je pense à toi en ce ${occasion}. Que cette nouvelle étape t’apporte énergie, confiance et réussite. — ${senderName}`,
+    `${greeting} en cette nouvelle année, je t’adresse des vœux ${t}. Merci d’être une personne ${gendered('précieuse', 'précieuse')} dans ma vie. ${longTail} — ${senderName}`,
+    `${recipientName}, pour cette nouvelle année, reçois mes vœux ${t} et sincères. Que cette période t’apporte de belles opportunités et de bons moments. — ${senderName}`,
+    `À ${recipientName} : je te souhaite une ${occasion.toLowerCase()} lumineuse et apaisante. Que tout ce qui compte pour toi avance dans le bon sens. — ${senderName}`,
+    `${recipientName}, je pense à toi en cette nouvelle année. Que cette nouvelle étape t’apporte énergie, confiance et réussite. — ${senderName}`,
   ];
 
   return base
@@ -450,6 +521,15 @@ function buildAiPayload({ senderName, senderPhone, recipientName, recipientPhone
     message_type: messageType,
     tone: tone || 'warm',
     lang: 'fr',
+    quality_rules_fr: [
+      'Rédiger en français correct, sans fautes d’orthographe ni de grammaire.',
+      'Relire et corriger les accords (genre/nombre) et la ponctuation.',
+      'Utiliser les accents (é, è, ê, œ, ç…) correctement.',
+      'Éviter les répétitions et les tournures maladroites.',
+      'Tenir compte du genre du récepteur (Homme/Femme) pour les accords.',
+      'Éviter l’écriture inclusive et les formes du type "(e)", "(se)", "un(e)".',
+      'Utiliser naturellement "bonne année" au féminin (ex: "une bonne année", "cette bonne année").',
+    ],
     count: 5,
     min_chars: MIN_MESSAGE_CHARS,
     target_chars: TARGET_MESSAGE_CHARS,
@@ -485,6 +565,16 @@ function buildAiPayload({ senderName, senderPhone, recipientName, recipientPhone
 
 function normalizeText(s) {
   return String(s || '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeAiFrench(text) {
+  let t = String(text || '');
+  t = t.replace(/\r\n/g, '\n');
+  t = t.replace(/[ \t]+/g, ' ');
+  t = t.replace(/\n{3,}/g, '\n\n');
+  t = t.replace(/\s+([,.;!?])/g, '$1');
+  t = t.replace(/([,.;!?])(\S)/g, '$1 $2');
+  return t.trim();
 }
 
 function clampTextLength(text) {
@@ -592,27 +682,53 @@ async function generateAiSuggestions(input) {
     throw new Error(msg);
   }
 
+  const { recipientName, recipientGender } = input || {};
+  const correctGreeting = buildRecipientGreeting(recipientName, recipientGender);
+
   const messages = extractAiMessages(data);
-  return messages.map(text => ({ text }));
+  return messages
+    .map((text) => {
+      let t = normalizeAiFrench(text);
+      if (!correctGreeting) return t;
+
+      // Supprime une éventuelle salutation existante (Cher/Chère/Bonjour/Salut + nom + ponctuation)
+      t = t.replace(/^(cher|ch[eè]re|bonjour|salut)\b[^\n]{0,80}([,!?\.])\s*/i, '');
+      // Supprime un prefix du type "NOM, ..." en première ligne
+      t = t.replace(/^[^\n]{1,60},\s*/i, '');
+      return `${correctGreeting}\n${t}`.trim();
+    })
+    .map((t) => ({ text: t }));
 }
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
+
+  if (generateBtn) {
+    generateBtn.disabled = true;
+    generateBtn.classList.add('is-loading');
+    if (generateBtnLabel) generateBtnLabel.textContent = 'Chargement…';
+  }
 
   const senderName = document.getElementById('senderName').value.trim();
   const senderPhone = document.getElementById('senderPhone')?.value.trim() || '';
   const recipientName = document.getElementById('recipientName').value.trim();
   const recipientPhone = document.getElementById('recipientPhone')?.value.trim() || '';
   const recipientGender = document.getElementById('recipientGender')?.value.trim() || '';
-  const relationship = document.getElementById('relationship').value.trim();
+  const relationshipCode = document.getElementById('relationship').value.trim();
+  const relationshipLabel = getSelectedOptionLabel('relationship');
   const messageType = document.getElementById('messageType')?.value.trim() || '';
   const occasion = FIXED_OCCASION;
   const tone = document.getElementById('tone').value.trim();
 
   const genderOk = recipientGender === 'male' || recipientGender === 'female';
 
-  if (!senderName || !recipientName || !genderOk || !relationship || !messageType) {
+  if (!senderName || !recipientName || !genderOk || !relationshipCode || !messageType) {
     setStatus('Champs manquants');
+    if (generateBtn) {
+      generateBtn.disabled = false;
+      generateBtn.classList.remove('is-loading');
+      if (generateBtnLabel) generateBtnLabel.textContent = 'Générer des propositions';
+    }
     return;
   }
 
@@ -649,7 +765,7 @@ form.addEventListener('submit', (e) => {
       const requestId = await createMessageRequest({
         userId,
         recipientId,
-        relationship,
+        relationship: relationshipCode,
         occasion,
         messageType,
         tone,
@@ -660,7 +776,7 @@ form.addEventListener('submit', (e) => {
       currentFlow.requestId = requestId;
 
       setStatus('Génération IA…');
-      const items = await generateAiSuggestions({ senderName, senderPhone, recipientName, recipientPhone, recipientGender, relationship, occasion, messageType, tone });
+      const items = await generateAiSuggestions({ senderName, senderPhone, recipientName, recipientPhone, recipientGender, relationship: (relationshipLabel || relationshipCode), occasion, messageType, tone });
       const filtered = enforceMinChars(items);
       if (!filtered.length) {
         throw new Error(`L’IA a retourné des messages trop courts (minimum ${MIN_MESSAGE_CHARS} caractères)`);
@@ -673,16 +789,20 @@ form.addEventListener('submit', (e) => {
 
       renderSuggestions(filtered);
       setStatus('Propositions prêtes');
-
       showStep(2);
     } catch (err) {
       const msg = err && err.message ? err.message : 'Erreur IA';
-      const fallback = generateLocalSuggestions({ senderName, recipientName, relationship, occasion, tone });
+      const fallback = generateLocalSuggestions({ senderName, recipientName, relationship: (relationshipLabel || relationshipCode), occasion, tone });
       const fbFiltered = enforceMinChars(fallback);
       renderSuggestions(fbFiltered);
       setStatus(`IA indisponible: ${msg}`);
-
       showStep(2);
+    } finally {
+      if (generateBtn) {
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('is-loading');
+        if (generateBtnLabel) generateBtnLabel.textContent = 'Générer des propositions';
+      }
     }
   })();
 });
@@ -692,6 +812,11 @@ resetBtn.addEventListener('click', () => {
   suggestionsList.innerHTML = '<div class="empty-state">Remplis le formulaire puis clique sur « Générer des propositions ».</div>';
   previewMessage.textContent = 'Choisis une proposition pour l’afficher ici.';
   previewOccasion.textContent = FIXED_OCCASION;
+  {
+    const g = document.getElementById('recipientGender')?.value.trim() || '';
+    const greetEl = document.getElementById('previewGreeting');
+    if (greetEl) greetEl.textContent = buildRecipientGreetingPlaceholder(g);
+  }
   previewSign.textContent = '—';
   applyCardBackgroundFromForm();
   resetStepUi();
@@ -718,10 +843,28 @@ backToSuggestionsBtn && backToSuggestionsBtn.addEventListener('click', () => {
 
 goPreviewBtn && goPreviewBtn.addEventListener('click', () => {
   if (!selectedText) return;
-  showStep(3);
+  const label = goPreviewBtn.querySelector('.btn-label');
+  const oldLabel = label ? label.textContent : '';
+  goPreviewBtn.disabled = true;
+  goPreviewBtn.classList.add('is-loading');
+  if (label) label.textContent = 'Chargement…';
+
+  // Force un reflow pour s'assurer que l'état loading est peint avant la transition
+  void goPreviewBtn.offsetHeight;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        showStep(3);
+        goPreviewBtn.classList.remove('is-loading');
+        if (label) label.textContent = oldLabel || 'Voir l’aperçu';
+        goPreviewBtn.disabled = false;
+      }, 900);
+    });
+  });
 });
 
-copyBtn.addEventListener('click', async () => {
+copyBtn && copyBtn.addEventListener('click', async () => {
   if (!selectedText) return;
 
   try {
@@ -760,9 +903,7 @@ chooseBtn.addEventListener('click', () => {
 
       const recipientPhone = document.getElementById('recipientPhone')?.value.trim() || '';
       if (publicCode && recipientPhone) {
-        const link = (res && typeof res.public_url === 'string' && res.public_url.trim() !== '')
-          ? res.public_url.trim()
-          : buildPublicVoeuxLink(publicCode);
+        const link = `https://mutzig.cm/happynewyear2026?i=${encodeURIComponent(publicCode)}`;
         const recipientName = document.getElementById('recipientName')?.value.trim() || '';
         const senderName = document.getElementById('senderName')?.value.trim() || '';
         const toName = recipientName || 'cher client';
@@ -774,9 +915,7 @@ chooseBtn.addEventListener('click', () => {
         }
       }
 
-      setTimeout(() => {
-        resetBtn && resetBtn.click();
-      }, 1600);
+      openConfirmModal();
     } catch (err) {
       const msg = err && err.message ? err.message : 'Erreur';
       setStatus(`Erreur sauvegarde: ${msg}`);

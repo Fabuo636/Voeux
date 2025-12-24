@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2026" />
 </head>
 <body>
   <div class="bg"></div>
@@ -25,20 +25,20 @@
             <div class="grid">
               <div class="field">
                 <label for="senderName">Ton nom</label>
-                <input id="senderName" name="senderName" type="text" placeholder="Ali" required />
+                <input id="senderName" name="senderName" type="text" placeholder="" required />
               </div>
               <div class="field">
                 <label for="senderPhone">Ton numéro de téléphone</label>
-                <input id="senderPhone" name="senderPhone" type="tel" placeholder="0612345678" />
+                <input id="senderPhone" name="senderPhone" type="tel" placeholder="" />
               </div>
 
               <div class="field">
                 <label for="recipientName">Nom du récepteur</label>
-                <input id="recipientName" name="recipientName" type="text" placeholder="Sara" required />
+                <input id="recipientName" name="recipientName" type="text" placeholder="" required />
               </div>
               <div class="field">
                 <label for="recipientPhone">Numéro de téléphone du récepteur</label>
-                <input id="recipientPhone" name="recipientPhone" type="tel" placeholder="0712345678" />
+                <input id="recipientPhone" name="recipientPhone" type="tel" placeholder="" />
               </div>
 
               <div class="field">
@@ -65,13 +65,16 @@
               </div>
 
               <div class="field full">
-                <label for="tone">Ton souhaité</label>
+                <label for="tone">Style du message</label>
                 <input id="tone" name="tone" type="text" placeholder="chaleureux, élégant, drôle…" />
               </div>
             </div>
 
             <div class="actions">
-              <button class="btn btn-primary" type="submit">Générer des propositions</button>
+              <button class="btn btn-primary" type="submit" id="generateBtn">
+                <span class="btn-label">Générer des propositions</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+              </button>
               <button class="btn btn-ghost" type="button" id="resetBtn">Réinitialiser</button>
             </div>
           </section>
@@ -94,7 +97,10 @@
 
             <div class="actions">
               <button class="btn btn-ghost" type="button" id="backToFormBtn">Retour</button>
-              <button class="btn btn-primary" type="button" id="goPreviewBtn" disabled>Voir l’aperçu</button>
+              <button class="btn btn-primary" type="button" id="goPreviewBtn" disabled>
+                <span class="btn-label">Voir l’aperçu</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+              </button>
             </div>
           </section>
         </form>
@@ -130,7 +136,6 @@
         </div>
 
         <div class="preview-actions">
-          <button class="btn btn-secondary" type="button" id="copyBtn">Copier le message</button>
           <button class="btn btn-primary" type="button" id="chooseBtn" disabled>Valider</button>
           <button class="btn btn-ghost" type="button" id="backToSuggestionsBtn">Retour</button>
         </div>
@@ -179,6 +184,28 @@
     </div>
   </div>
 
-<script src="app.js"></script>
+  <div class="modal" id="confirmModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="confirmTitle">Message envoyé</div>
+          <div class="modal-subtitle">Votre carte a bien été envoyée.</div>
+        </div>
+        <button class="icon-btn" type="button" id="confirmClose" aria-label="Fermer" title="Fermer">
+          <span class="icon" aria-hidden="true">×</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="actions">
+          <button class="btn btn-primary" type="button" id="restartBtn">Recommencer</button>
+          <button class="btn btn-ghost" type="button" id="confirmOkBtn">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js?v=2026"></script>
 </body>
 </html>

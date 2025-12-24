@@ -299,12 +299,51 @@ input:focus, select:focus {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: 0;
   padding: 12px 14px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 160ms ease, filter 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.btn .btn-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  border: 3px solid rgba(10, 10, 14, 0.25);
+  border-top-color: rgba(10, 10, 14, 0.98);
+  border-radius: 50%;
+  animation: btnSpin 0.9s linear infinite;
+}
+
+.btn.is-loading {
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.btn.is-loading:disabled {
+  opacity: 0.92;
+}
+
+.btn.is-loading .btn-spinner {
+  display: inline-block;
+}
+
+.btn.is-loading .btn-label {
+  opacity: 0.7;
+}
+
+.btn.is-loading .btn-spinner {
+  display: inline-block;
+}
+
+@keyframes btnSpin {
+  to { transform: rotate(360deg); }
 }
 
 .btn:active { transform: translateY(1px); }

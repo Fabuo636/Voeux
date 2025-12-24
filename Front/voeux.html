@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Montserrat:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2026" />
   <style>
     .public-wrap {
       width: min(760px, calc(100% - 40px));
@@ -107,7 +107,7 @@
 
     <div class="public-actions">
       <button id="downloadBtn" type="button" disabled>Télécharger l'image</button>
-      <a id="sendYourOwnBtn" href="index.html">Envoyer une carte à son tour</a>
+      <a id="sendYourOwnBtn" href="https://mutzig.cm/bonneannee">Envoyer une carte à son tour</a>
     </div>
 
     <div class="public-error" id="errorBox"></div>
@@ -181,8 +181,29 @@
       return `Cher/Chère ${n},`;
     }
 
+    async function fetchVoeuxData({ code }) {
+      const apiUrl = `${window.location.origin}/externe/Voeux/API/voeux_public.php?i=${encodeURIComponent(code)}`;
+
+      const res = await fetch(apiUrl, { cache: 'no-store' });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (res.ok && data && data.ok === true) {
+        return { data, url: apiUrl };
+      }
+
+      const err = data && data.error
+        ? String(data.error)
+        : (res.status ? `HTTP ${res.status}` : 'Erreur');
+      throw new Error(`Erreur: ${err}\nCode: ${code}\nURL: ${apiUrl}`);
+    }
+
     (async () => {
-      const code = getParam('code') || getParam('i');
+      const code = getParam('i') || getParam('code');
       if (!code) {
         msgEl.textContent = '';
         signEl.textContent = '—';
@@ -191,18 +212,14 @@
       }
 
       try {
-        const res = await fetch(`../API/voeux_public.php?code=${encodeURIComponent(code)}`);
-        const data = await res.json();
-
-        if (!res.ok || !data || data.ok !== true) {
-          const err = data && data.error ? String(data.error) : 'Erreur';
-          throw new Error(err);
-        }
+        const out = await fetchVoeuxData({ code });
+        const data = out.data;
 
         const msg = data.data && typeof data.data.message === 'string' ? data.data.message : '';
         const bg = data.data && typeof data.data.background === 'string' ? data.data.background : '';
         const recipientName = data.data && typeof data.data.recipient_name === 'string' ? data.data.recipient_name.trim() : '';
         const recipientGender = data.data && typeof data.data.recipient_gender === 'string' ? data.data.recipient_gender.trim() : '';
+        const senderName = data.data && typeof data.data.sender_name === 'string' ? data.data.sender_name.trim() : '';
 
         if (occasionEl) {
           occasionEl.textContent = 'Bonne année';
@@ -217,7 +234,7 @@
         }
 
         msgEl.textContent = gb.body;
-        signEl.textContent = parts.sign;
+        signEl.textContent = senderName ? `_ ${senderName}` : parts.sign;
 
         if (canvas && bg) {
           canvas.style.backgroundImage = `url('${bg}')`;

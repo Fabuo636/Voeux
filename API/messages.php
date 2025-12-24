@@ -108,7 +108,7 @@ if ($method === 'POST') {
         if ($shareTpl !== '') {
             $publicUrl = str_replace('{code}', urlencode($publicCode), $shareTpl);
         } else {
-            $publicUrl = $apiBase !== '' ? ($apiBase . '/voeux_link.php?code=' . urlencode($publicCode)) : null;
+            $publicUrl = 'https://mutzig.cm/happynewyear2026?i=' . urlencode($publicCode);
         }
 
         api_send_json(['ok' => true, 'id' => $messageId, 'public_code' => $publicCode, 'public_url' => $publicUrl], 201);

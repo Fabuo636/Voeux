@@ -14,6 +14,9 @@ if ($method !== 'GET') {
 }
 
 $code = isset($_GET['code']) ? trim((string)$_GET['code']) : '';
+if ($code === '' && isset($_GET['i'])) {
+    $code = trim((string)$_GET['i']);
+}
 if ($code === '') {
     api_fail('Missing code', 422);
 }
@@ -27,9 +30,11 @@ $st = $pdo->prepare(
         m.expires_at,
         m.created_at,
         r.full_name AS recipient_name,
-        r.gender AS recipient_gender
+        r.gender AS recipient_gender,
+        u.full_name AS sender_name
      FROM messages m
      LEFT JOIN message_requests mr ON mr.id = m.request_id
+     LEFT JOIN users u ON u.id = mr.user_id
      LEFT JOIN recipients r ON r.id = mr.recipient_id
      WHERE m.public_code = ?'
 );
@@ -59,6 +64,11 @@ try {
 } catch (Throwable $e) {
 }
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('Expires: 0');
+
 api_send_json([
     'ok' => true,
     'data' => [
@@ -67,6 +77,7 @@ api_send_json([
         'background' => $row['background'] === null ? null : (string)$row['background'],
         'recipient_name' => $row['recipient_name'] === null ? null : (string)$row['recipient_name'],
         'recipient_gender' => $row['recipient_gender'] === null ? null : (string)$row['recipient_gender'],
+        'sender_name' => $row['sender_name'] === null ? null : (string)$row['sender_name'],
         'created_at' => (string)$row['created_at'],
     ],
 ]);
